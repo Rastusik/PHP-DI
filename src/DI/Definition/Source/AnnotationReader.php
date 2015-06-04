@@ -89,13 +89,14 @@ class AnnotationReader implements DefinitionSource
     /**
      * Browse the class properties looking for annotated properties.
      *
-     * @param ReflectionClass  $reflectionClass
-     * @param ObjectDefinition $objectDefinition
+     * @param ReflectionClass  $class
+     * @param ObjectDefinition $definition
      */
-    private function readProperties(ReflectionClass $reflectionClass, ObjectDefinition $objectDefinition)
+    private function readProperties(ReflectionClass $class, ObjectDefinition $definition)
     {
-        // This will look in all the properties, including those of the parent classes
-        foreach ($reflectionClass->getProperties() as $property) {
+        // This will look in all the properties, including those of the parent
+        // classes (except the private ones)
+        foreach ($class->getProperties() as $property) {
             // Ignore static properties
             if ($property->isStatic()) {
                 continue;
@@ -104,8 +105,13 @@ class AnnotationReader implements DefinitionSource
             $propertyInjection = $this->getPropertyInjection($property);
 
             if ($propertyInjection) {
-                $objectDefinition->addPropertyInjection($propertyInjection);
+                $definition->addPropertyInjection($propertyInjection);
             }
+        }
+
+        $parentClass = $class->getParentClass();
+        if ($parentClass) {
+            $this->readProperties($parentClass, $definition);
         }
     }
 
